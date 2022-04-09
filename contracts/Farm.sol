@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // Modified by LTO Network to work for non-mintable ERC20.
 contract Farm is Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
 
     // Info of each user.

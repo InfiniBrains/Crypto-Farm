@@ -6,12 +6,13 @@ import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // Farm distributes the ERC20 rewards based on staked LP to each user.
 //
 // Cloned from https://github.com/SashimiProject/sashimiswap/blob/master/contracts/MasterChef.sol
 // Modified by LTO Network to work for non-mintable ERC20.
-contract Farm is Ownable {
+contract Farm is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -80,7 +81,7 @@ contract Farm is Ownable {
     function fund(uint256 _amount) public {
         require(block.number < endBlock, "fund: too late, the farm is closed");
 
-        erc20.safeTransferFrom(erc20 ,address(msg.sender), address(this), _amount);
+        erc20.safeTransferFrom(address(msg.sender), address(this), _amount);
         endBlock += _amount.div(rewardPerBlock);
     }
 
@@ -187,7 +188,7 @@ contract Farm is Ownable {
     }
 
     // Withdraw LP tokens from Farm.
-    function withdraw(uint256 _pid, uint256 _amount) public {
+    function withdraw(uint256 _pid, uint256 _amount) nonReentrant() public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: can't withdraw more than deposit");
@@ -201,7 +202,7 @@ contract Farm is Ownable {
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public {
+    function emergencyWithdraw(uint256 _pid) nonReentrant() public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         pool.lpToken.safeTransfer(address(msg.sender), user.amount);
